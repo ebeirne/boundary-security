@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.boundary/
+.release-checks/
+*.log
+.env
+.env.*
+!.env.example
+campaign/
+releases/
+*.zip
+evidence/*.json
+evidence/realistic-lab/
+evidence/document-privacy/

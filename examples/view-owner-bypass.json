@@ -1,0 +1,208 @@
+{
+  "name": "View access review",
+  "revision": "owner-view",
+  "owner": "Owned synthetic fixture",
+  "authorized": true,
+  "synthetic": true,
+  "migration": "CREATE TABLE public.notes(id integer PRIMARY KEY, owner_id uuid NOT NULL, body text NOT NULL); GRANT ALL ON public.notes TO authenticated, anon; ALTER TABLE public.notes ENABLE ROW LEVEL SECURITY;\n CREATE POLICY r ON public.notes FOR SELECT TO authenticated USING(owner_id=auth.uid());\n CREATE POLICY u ON public.notes FOR UPDATE TO authenticated USING(owner_id=auth.uid()) WITH CHECK(owner_id=auth.uid());\n CREATE POLICY d ON public.notes FOR DELETE TO authenticated USING(owner_id=auth.uid());\n CREATE POLICY i ON public.notes FOR INSERT TO authenticated WITH CHECK(owner_id=auth.uid());\n CREATE VIEW public.notes_view  AS SELECT * FROM public.notes; GRANT ALL ON public.notes_view TO authenticated,anon;",
+  "seed": "INSERT INTO public.notes VALUES(1,'10000000-0000-4000-8000-000000000001','one'),(2,'20000000-0000-4000-8000-000000000002','two');",
+  "contract": {
+    "version": 1,
+    "checks": [
+      {
+        "id": "select-own",
+        "label": "select-own",
+        "actor": "Owner",
+        "role": "authenticated",
+        "userId": "10000000-0000-4000-8000-000000000001",
+        "table": "public.notes_view",
+        "operation": "select",
+        "expected": "allow",
+        "match": {
+          "id": 1
+        },
+        "values": {}
+      },
+      {
+        "id": "select-other",
+        "label": "select-other",
+        "actor": "Owner",
+        "role": "authenticated",
+        "userId": "10000000-0000-4000-8000-000000000001",
+        "table": "public.notes_view",
+        "operation": "select",
+        "expected": "deny",
+        "match": {
+          "id": 2
+        },
+        "values": {}
+      },
+      {
+        "id": "select-anon",
+        "label": "select-anon",
+        "actor": "Visitor",
+        "role": "anon",
+        "userId": null,
+        "table": "public.notes_view",
+        "operation": "select",
+        "expected": "deny",
+        "match": {
+          "id": 1
+        },
+        "values": {}
+      },
+      {
+        "id": "update-own",
+        "label": "update-own",
+        "actor": "Owner",
+        "role": "authenticated",
+        "userId": "10000000-0000-4000-8000-000000000001",
+        "table": "public.notes_view",
+        "operation": "update",
+        "expected": "allow",
+        "match": {
+          "id": 1
+        },
+        "values": {
+          "body": "changed"
+        }
+      },
+      {
+        "id": "update-other",
+        "label": "update-other",
+        "actor": "Owner",
+        "role": "authenticated",
+        "userId": "10000000-0000-4000-8000-000000000001",
+        "table": "public.notes_view",
+        "operation": "update",
+        "expected": "deny",
+        "match": {
+          "id": 2
+        },
+        "values": {
+          "body": "changed"
+        }
+      },
+      {
+        "id": "update-anon",
+        "label": "update-anon",
+        "actor": "Visitor",
+        "role": "anon",
+        "userId": null,
+        "table": "public.notes_view",
+        "operation": "update",
+        "expected": "deny",
+        "match": {
+          "id": 1
+        },
+        "values": {
+          "body": "changed"
+        }
+      },
+      {
+        "id": "delete-own",
+        "label": "delete-own",
+        "actor": "Owner",
+        "role": "authenticated",
+        "userId": "10000000-0000-4000-8000-000000000001",
+        "table": "public.notes_view",
+        "operation": "delete",
+        "expected": "allow",
+        "match": {
+          "id": 1
+        },
+        "values": {}
+      },
+      {
+        "id": "delete-other",
+        "label": "delete-other",
+        "actor": "Owner",
+        "role": "authenticated",
+        "userId": "10000000-0000-4000-8000-000000000001",
+        "table": "public.notes_view",
+        "operation": "delete",
+        "expected": "deny",
+        "match": {
+          "id": 2
+        },
+        "values": {}
+      },
+      {
+        "id": "delete-anon",
+        "label": "delete-anon",
+        "actor": "Visitor",
+        "role": "anon",
+        "userId": null,
+        "table": "public.notes_view",
+        "operation": "delete",
+        "expected": "deny",
+        "match": {
+          "id": 1
+        },
+        "values": {}
+      },
+      {
+        "id": "insert-own",
+        "label": "insert-own",
+        "actor": "Owner",
+        "role": "authenticated",
+        "userId": "10000000-0000-4000-8000-000000000001",
+        "table": "public.notes_view",
+        "operation": "insert",
+        "expected": "allow",
+        "match": {},
+        "values": {
+          "id": 3,
+          "owner_id": "10000000-0000-4000-8000-000000000001",
+          "body": "new"
+        }
+      },
+      {
+        "id": "insert-other",
+        "label": "insert-other",
+        "actor": "Owner",
+        "role": "authenticated",
+        "userId": "10000000-0000-4000-8000-000000000001",
+        "table": "public.notes_view",
+        "operation": "insert",
+        "expected": "deny",
+        "match": {},
+        "values": {
+          "id": 3,
+          "owner_id": "20000000-0000-4000-8000-000000000002",
+          "body": "new"
+        }
+      },
+      {
+        "id": "insert-anon",
+        "label": "insert-anon",
+        "actor": "Visitor",
+        "role": "anon",
+        "userId": null,
+        "table": "public.notes_view",
+        "operation": "insert",
+        "expected": "deny",
+        "match": {},
+        "values": {
+          "id": 3,
+          "owner_id": "10000000-0000-4000-8000-000000000001",
+          "body": "new"
+        }
+      },
+      {
+        "id": "outsider",
+        "label": "outsider",
+        "actor": "Other identity",
+        "role": "authenticated",
+        "userId": "30000000-0000-4000-8000-000000000003",
+        "table": "public.notes_view",
+        "operation": "select",
+        "expected": "deny",
+        "match": {
+          "id": 1
+        },
+        "values": {}
+      }
+    ]
+  }
+}

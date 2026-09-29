@@ -1,0 +1,66 @@
+name: Boundary isolated validation
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Verify complete local workflow
+        run: npm run release:check
+      - name: Compare fixtures against isolated native PostgreSQL
+        shell: bash
+        run: |
+          docker run -d --name boundary-native --network none --label boundary.parity=synthetic-only -e POSTGRES_HOST_AUTH_METHOD=trust postgres:17.11
+          for i in $(seq 1 30); do docker exec boundary-native pg_isready -U postgres && break; sleep 1; done
+          node scripts/verify-native.mjs boundary-native
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.118.0
+      - name: Initialize disposable fixture
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/supabase-validation"
+          cd "$RUNNER_TEMP/supabase-validation"
+          supabase init
+      - name: Start synthetic Auth, Storage and REST services
+        shell: bash
+        run: |
+          cd "$RUNNER_TEMP/supabase-validation"
+          supabase start -x realtime,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor > "$RUNNER_TEMP/boundary-supabase-start.log" 2>&1
+      - name: Compare authenticated API results with Boundary
+        env:
+          BOUNDARY_VALIDATION_REPORT: ${{ runner.temp }}/supabase-local-validation.json
+        run: node scripts/verify-supabase.mjs "$RUNNER_TEMP/supabase-validation"
+      - name: Retain scoped evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: boundary-validation-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/supabase-local-validation.json
+            evidence/native-parity-10.json
+            .release-checks/*/report.json
+            .release-checks/*/tests.log
+          include-hidden-files: true
+          retention-days: 14
+          if-no-files-found: warn
+      - name: Stop disposable services
+        if: always()
+        shell: bash
+        run: |
+          docker rm -f boundary-native || true
+          if [ -f "$RUNNER_TEMP/supabase-validation/supabase/config.toml" ]; then
+            cd "$RUNNER_TEMP/supabase-validation"
+            supabase stop
+          fi

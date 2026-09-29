@@ -1,0 +1,23 @@
+import {execFileSync} from 'node:child_process';
+import {mkdirSync,readFileSync,writeFileSync,existsSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+const root=fileURLToPath(new URL('../',import.meta.url));
+const destination=process.argv[2];
+if(!destination||process.argv.length!==3)throw Error('Supply a new output directory for the release package.');
+const git=args=>execFileSync('git',args,{cwd:root,encoding:'utf8',windowsHide:true});
+const files=['src','server','scripts','public','tests','docs','.github','package.json','package-lock.json','index.html','vite.config.js','README.md','LICENSE','CONTRIBUTING.md','SECURITY.md','ROADMAP.md','THIRD_PARTY_NOTICES.md','VERIFICATION.md','Start-Boundary.cmd','.gitignore','examples'];
+git(['diff','--exit-code','HEAD','--',...files]);
+const version=JSON.parse(git(['show','HEAD:package.json'])).version;
+if(!/^[0-9A-Za-z.-]+$/.test(version))throw Error('Invalid package version.');
+const commit=git(['rev-parse','HEAD']).trim(),directory=path.resolve(destination);
+mkdirSync(directory,{recursive:false});
+const filename=`boundary-${version}-source.zip`,archive=path.join(directory,filename);
+if(existsSync(archive))throw Error('Refusing to overwrite an existing release.');
+git(['archive','--format=zip','--prefix=boundary/','--output='+archive,'HEAD','--',...files]);
+const sha256=createHash('sha256').update(readFileSync(archive)).digest('hex');
+writeFileSync(path.join(directory,'SHA256SUMS'),`${sha256}  ${filename}\n`,{flag:'wx'});
+writeFileSync(path.join(directory,'release-manifest.json'),JSON.stringify({version,commit,filename,sha256,scope:'Local beta source distribution. Requires Node 22 or later and npm. Not a signed security certification.'},null,2),{flag:'wx'});
+console.log(JSON.stringify({filename,commit,sha256}));
+

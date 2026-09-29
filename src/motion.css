@@ -1,0 +1,13 @@
+/* Full-viewport television grain behind content; no text distortion or luminance pulses. */
+.motion-shell{position:relative;isolation:isolate;min-height:100vh;padding-bottom:44px}
+.tv-static{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;background:#030403;contain:strict}
+.tv-response{position:absolute;inset:-8px}
+.tv-grain{position:absolute;inset:-96px;background:url('/tv-grain.svg') repeat;background-size:192px 192px;opacity:.22;animation:tv-static-shift 800ms steps(1,end) infinite;will-change:transform}
+.tv-scanlines{position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0,transparent 3px,#0006 3px,#0006 4px);opacity:.35}
+.motion-shell>.landing,.motion-shell>.site-document,.motion-shell>.app-shell,.motion-shell .main-shell,.motion-shell>.startup{background:transparent}
+.motion-control{position:fixed;bottom:8px;right:16px;z-index:20;display:flex;align-items:center;gap:9px;border:1px solid var(--line);background:#080907;color:var(--ink);padding:0 11px;min-height:36px}
+.motion-control button{font:inherit;font-size:11px;color:inherit;background:none;border:0;cursor:pointer;min-height:36px;padding:0 3px}.motion-control button:disabled{cursor:default;opacity:.7}.motion-symbol{font-size:18px;width:16px;text-align:center}
+@keyframes tv-static-shift{0%{transform:translate(0,0)}12.5%{transform:translate(-37px,19px)}25%{transform:translate(23px,-51px)}37.5%{transform:translate(-62px,-13px)}50%{transform:translate(41px,57px)}62.5%{transform:translate(-19px,-71px)}75%{transform:translate(67px,31px)}87.5%{transform:translate(-43px,63px)}}
+[data-motion=still] .tv-grain{animation-play-state:paused;will-change:auto}
+@media(prefers-reduced-motion:reduce){.tv-grain{animation:none!important;transform:none!important;will-change:auto}}
+@media(max-width:600px){.motion-control{right:8px;bottom:6px}.tv-grain{opacity:.18}}
