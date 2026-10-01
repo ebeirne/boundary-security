@@ -23,7 +23,8 @@ export async function checkDocumentPrivacy({request, owner, outsider, marker}) {
     if(!baseline){add(`${surface}-other-customer`,'incomplete','Skipped because the owner baseline was not verified.');continue;}
     const other=await call(outsider,surface);
     const otherText=extract(other);
-    if(other.status===200 && otherText?.includes(marker)) add(`${surface}-other-customer`,'failed','Another customer received the private synthetic marker.');
+    // The bytes already reached the other customer. An error status cannot undo disclosure.
+    if(other.markerPresent===true || otherText?.includes(marker)) add(`${surface}-other-customer`,'failed','Another customer received the private synthetic marker.');
     else if((surface==='file' && [403,404].includes(other.status)) || (surface==='retrieval' && other.status===200 && Array.isArray(other.body) && other.body.length===0)) {
       const stillAuthenticated=await validIdentity(outsider);
       const control=await call(owner,surface),controlText=extract(control);

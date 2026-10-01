@@ -1,0 +1,30 @@
+CURRENT HEAD ASSET
+
+The current black-stone head is an AI-generated interpretation of the classical sculpture reference supplied by the user on 2026-09-28. It is a raster website asset, not a newly sculpted Blender mesh. Smoke is generated and animated separately in the browser.
+
+PREVIOUS BLENDER STUDY (retained source asset)
+
+SCULPTURE CREDIT
+
+Original 3D scan: Scan The World.
+Object: Bust of an unknown woman, Ra 77, Musee Saint-Raymond, Toulouse.
+The historical sculpture is Roman, dated approximately 125-135 CE.
+
+Source and attribution license:
+https://commons.wikimedia.org/wiki/File:14-msr-unknown-bust-of-a-woman-10.stl
+https://www.myminifactory.com/object/3d-print-unknown-bust-of-a-woman-48200
+
+The source permits reuse, adaptation, and commercial use with attribution to Scan The World.
+Changes: cropped to the head, added modeled crown braids, near-black basalt
+material, procedural mineral surface, studio lighting, camera composition,
+transparent render, and animated character treatment.
+Rendered locally in Blender. This reinterprets an existing scan.
+
+
+ROMAN FRESCO BACKGROUND
+Original AI-generated Roman-inspired artwork for this site. It is not a reproduction or identification of a historical painting.
+
+
+classical-ink-studies.png: Original AI-generated ink illustrations of a Roman arch and winged classical sculpture, created for Boundary. These are artistic interpretations, not reproductions of specific museum objects.
+
+ROTATING STUDY: sculpture-points.json samples the existing Scan The World Ra 77 museum scan in boundary-head.blend. Animated as projected ink fragments; amphora and fluted column are procedural reinterpretations. User-provided videos were studied as motion references and are not embedded or redistributed. roman-fresco-grown.png is an AI-generated extension of the original mural; live contour drawing uses it as a color and stroke-direction reference.

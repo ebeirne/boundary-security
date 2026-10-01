@@ -25,8 +25,8 @@ test('Supabase routes use distinct sessions, preserve positive controls and reda
   if(url.pathname.startsWith('/storage/'))return owner?new Response(config.marker):Response.json({statusCode:'404',message:'Object not found'},{status:400});
   return Response.json(owner?[{content:config.marker}]:[]);
  };
- const report=await runSupabasePrivacy(config,{...credentials,fetchImpl});assert.equal(report.verdict,'checks-passed');assert.equal(requests.length,14);
- assert.equal(requests.filter(r=>!r.options.headers.Authorization).length,2);
+ const report=await runSupabasePrivacy(config,{...credentials,fetchImpl});assert.equal(report.verdict,'checks-passed');assert.equal(requests.length,16);
+ assert.equal(requests.filter(r=>!r.options.headers.Authorization).length,3);
  assert(requests.every(r=>r.options.redirect==='error'));assert(requests.every(r=>new URL(r.url).origin===config.origin));
  for(const secret of [...Object.values(credentials),config.marker,config.ownerId,config.origin])assert(!JSON.stringify(report).includes(secret));
 });

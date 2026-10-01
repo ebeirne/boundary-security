@@ -1,2 +1,2 @@
-import { defineConfig } from 'vite';
-export default defineConfig({build:{sourcemap:false}});
+import {defineConfig} from 'vite';
+export default defineConfig({optimizeDeps:{exclude:['@electric-sql/pglite']},worker:{format:'es'},build:{sourcemap:false}});

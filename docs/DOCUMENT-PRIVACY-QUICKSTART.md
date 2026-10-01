@@ -1,6 +1,6 @@
 # Document privacy pilot
 
-This experimental local runner checks one private text file and one document row or supported retrieval function using two real test-user sessions, plus anonymous requests to that file's public and authenticated URLs. It reads exact configured resources. It does not scan a website, alter policies, upload files or create users. Use a staging project you own, with invented records. The hosted website's demo remains the earlier database-rule workbench.
+This experimental local runner checks one private text file and one document row or supported retrieval function using two real test-user sessions, plus anonymous requests to that file's public and authenticated URLs and the configured document retrieval route. It reads exact configured resources. It does not scan a website, alter policies, upload files or create users. Use a staging project you own, with invented records. The hosted website's demo remains the earlier database-rule workbench.
 
 ## Prepare once
 
@@ -28,7 +28,7 @@ The process exits with 0 for all checks passed, 1 for an observed leak, and 2 fo
 
 ## Boundaries
 
-The default document-row check verifies the exact REST row read. Optional RPC mode verifies one declared GET retrieval function, including whether its privileges expose the known marker to the other customer. Neither verifies semantic search or a generated chatbot answer. A pass does not cover previously issued signed links, cached answers, revoked memberships, other documents or anonymous document retrieval. The two anonymous file checks cover only the exact configured object's public and authenticated URLs.
+The default document-row check verifies the exact REST row read. Optional RPC mode verifies one declared GET retrieval function, including whether its privileges expose the known marker to the other customer or an anonymous visitor. Neither verifies semantic search or a generated chatbot answer. A pass does not cover previously issued signed links, cached answers, revoked memberships, other documents or other retrieval routes. The two anonymous file checks cover only the exact configured object's public and authenticated URLs. The anonymous document check uses the same exact row or reviewed GET function, with owner access rechecked after an empty result or access denial. An unavailable or missing retrieval route is incomplete. Current reports contain eight checks; earlier seven-check reports cannot be compared with them to establish a repair.
 
 This first runner still requires technical setup. Do not market it as one-click, SQL-free onboarding or complete SaaS security. The next usability gate is completing setup with nondeveloper founders and measuring assistance. No independent review or customer validation has been completed for this extension.
 

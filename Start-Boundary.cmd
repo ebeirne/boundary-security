@@ -1,6 +1,10 @@
 @echo off
 cd /d "%~dp0"
-call npm ci
-if errorlevel 1 exit /b 1
-call npm run dev
-pause
+where node >nul 2>nul
+if errorlevel 1 (
+  echo Install Node.js 22 or later from https://nodejs.org then open this file again.
+  pause
+  exit /b 1
+)
+node scripts/launch.mjs
+if errorlevel 1 pause

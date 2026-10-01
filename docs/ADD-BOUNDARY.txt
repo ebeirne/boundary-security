@@ -1,0 +1,20 @@
+Add Boundary's free beta access checks to this codebase as a local development tool. Inspect the app and do the setup work you can; ask me only for missing information you cannot discover safely.
+
+Start here: https://beirne-websites.vercel.app/boundary#privacy
+Use the full source download linked by that page, verify its published SHA-256, and read docs/DOCUMENT-PRIVACY-QUICKSTART.md and examples/document-privacy.json from that exact release. If you cannot access or verify it, stop and ask for the source archive. Do not invent an npm package, SDK, API or configuration format.
+
+1. Inspect this repository for Supabase usage, existing tests, staging configuration and private file/document flows. Do not read or display secret values. Explain whether Boundary's supported workflow fits: a separate Supabase staging project or local Supabase; two ordinary test users; a private text file under 64 KB; and a matching public-schema document table with id and text content columns, or the documented reviewed read-only GET retrieval function. If it does not fit, explain the exact mismatch. Do not change my app's schema, policies or backend just to force compatibility.
+
+2. If supported, place the verified Boundary source in tools/boundary without overwriting existing work, preserving its license/notices and recording the version and checksum. Keep it out of the production bundle. The document-privacy CLI uses Node built-ins and requires Node.js 22+; it does not require installing the Boundary UI dependencies.
+
+3. Prepare a local configuration using the release's example and my real nonsecret staging identifiers. Use an invented marker shared by the file and document, and two distinct ordinary test users. Never invent working IDs or treat placeholders as ready. If fixtures are missing, prepare a minimal, reviewable staging-only setup using my app's existing flow; get confirmation of the exact non-production target before creating remote fixtures. Preserve existing access rules. No production data, privileged credentials or policy weakening.
+
+4. Add a convenient local command using the project's existing task runner. It must invoke:
+node tools/boundary/scripts/check-document-privacy.mjs --config .boundary/privacy.json --out <new-report-path>
+Use a fresh report filename each run and preserve the CLI's exit code: 0 = scoped checks passed, 1 = observed disclosure, 2 = incomplete/error. Do not mark an incomplete run as passing. Keep the local configuration, sessions and reports out of Git; preserve existing ignore rules. The source snapshot itself may be versioned after review.
+
+5. Tell me how to supply BOUNDARY_SUPABASE_PUBLIC_KEY, BOUNDARY_OWNER_TOKEN and BOUNDARY_OTHER_TOKEN locally without exposing values in chat, logs, shell history or committed files. Use the public project key and fresh ordinary test-user sessions, never service-role/admin keys. Do not ask me to paste credentials into chat. If secure local entry is unavailable, leave execution pending and explain the local-console route.
+
+6. Verify the local command and configuration structure. Run the real scoped checks only once the staging target, invented fixtures and local credentials are ready and authorized. Otherwise say exactly what remains. Show changed files, a short start/rerun instruction, and separate setup completed from checks actually executed. Do not enable CI or deploy automatically. A passing sample is not a whole-app security audit.
+
+Keep your explanation short. Do the work rather than giving me a generic tutorial, and finish with the single next action I need to take, if any.

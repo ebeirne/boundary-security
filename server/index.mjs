@@ -136,5 +136,5 @@ export function createApp({port=4387,dataDir=path.join(ROOT,'.boundary'),assesso
 if(process.argv[1] && path.resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
   const port=Number(process.env.BOUNDARY_PORT??4387);
   if(!Number.isInteger(port)||port<1024||port>65535)throw new Error('BOUNDARY_PORT must be between 1024 and 65535.');
-  const app=createApp({port});app.server.on('error',e=>{console.error(e.code==='EADDRINUSE'?`Port ${port} is in use. Set BOUNDARY_PORT to an unused local port.`:'The local server could not start.');process.exitCode=1;});app.server.listen(port,'127.0.0.1',()=>console.log(`Boundary is ready at http://127.0.0.1:${port}`));
+  const app=createApp({port});app.server.on('error',e=>{console.error(e.code==='EADDRINUSE'?`Port ${port} is in use. Set BOUNDARY_PORT to an unused local port.`:'The local server could not start.');process.exitCode=1;});app.server.listen(port,'127.0.0.1',()=>console.log(`Boundary is ready at http://127.0.0.1:${port}/#privacy\nKeep this terminal open while using Boundary. Press Ctrl+C to stop.\nOther workbench tools: http://127.0.0.1:${port}/`));
 }

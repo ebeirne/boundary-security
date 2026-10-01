@@ -1,5 +1,18 @@
 import {createHash} from 'node:crypto';
 import {checkDocumentPrivacy} from './privacy-check.mjs';
+// The response has already been bounded to 64 KB. Inspect decoded JSON strings too,
+// because an error body may disclose the marker using JSON unicode escapes.
+function carriesMarker(text,json,marker){
+ if(text.includes(marker))return true;
+ const pending=[json];
+ while(pending.length){const value=pending.pop();
+  if(typeof value==='string'&&value.includes(marker))return true;
+  if(value&&typeof value==='object')for(const [key,child] of Object.entries(value)){
+   if(key.includes(marker))return true;pending.push(child);
+  }
+ }
+ return false;
+}
 export function validatePrivacyConfig(config){
  const c=structuredClone(config);
  if(c?.version!==1 || c.authorized!==true || c.synthetic!==true)throw Error('Confirm ownership/authorization and synthetic fixtures in the version 1 configuration.');
@@ -27,7 +40,7 @@ export function supabasePrivacyAdapter(config,{publishableKey,ownerToken,otherTo
  }
  if(ownerToken===otherToken)throw Error('The test users must have different access tokens.');
  return async({actor,surface})=>{
-  const anonymous=actor===null&&['public-file','anonymous-file'].includes(surface);
+  const anonymous=actor===null&&['public-file','anonymous-file','anonymous-retrieval'].includes(surface);
   if(!anonymous&&(![c.ownerId,c.otherId].includes(actor)||!['identity','file','retrieval'].includes(surface)))throw Error('Unknown configured check.');
   const file=['file','public-file','anonymous-file'].includes(surface);
   const retrievalRoute=c.retrieval.mode==='rpc'?`/rest/v1/rpc/${c.retrieval.functionName}?${new URLSearchParams({document_id:String(c.recordId)})}`:`/rest/v1/${c.table}?${new URLSearchParams({select:'content',id:`eq.${c.recordId}`})}`;
@@ -37,7 +50,7 @@ export function supabasePrivacyAdapter(config,{publishableKey,ownerToken,otherTo
   if(reader)try{for(;;){const {done,value}=await reader.read();if(done)break;total+=value.length;if(total>65536)throw Error('Synthetic response exceeds 64 KB');chunks.push(value)}}finally{await reader.cancel()}
   const text=Buffer.concat(chunks).toString('utf8');let json;try{json=JSON.parse(text)}catch{}
   const status=file&&res.status===400&&String(json?.statusCode)==='404'?404:res.status;
-  return {status,body:file?text:json};
+  return {status,body:file?text:json,markerPresent:carriesMarker(text,json,c.marker)};
  };
 }
 export async function runSupabasePrivacy(config,credentials){
@@ -48,7 +61,7 @@ export async function runSupabasePrivacy(config,credentials){
   let status='incomplete',reason='Owner file access was not established.';
   if(report.results.some(r=>r.id==='file-owner'&&r.status==='passed')){
    try{const r=await request({actor:null,surface});
-    if(r.status===200&&r.body.includes(c.marker)){status='failed';reason='An anonymous visitor received the private synthetic marker.'}
+    if(r.markerPresent===true||r.body.includes(c.marker)){status='failed';reason='An anonymous visitor received the private synthetic marker.'}
     else if([403,404].includes(r.status)||(surface==='anonymous-file'&&r.status===401)){
      const control=await request({actor:c.ownerId,surface:'file'});
      if(control.status===200&&control.body.includes(c.marker)){status='passed';reason='This exact anonymous request was denied or hidden and owner access was rechecked.'}
@@ -59,7 +72,21 @@ export async function runSupabasePrivacy(config,credentials){
   }
   report.results.push({id:surface,status,reason});
  }
+ let retrievalStatus='incomplete',retrievalReason='Owner retrieval access was not established.';
+ const ownerRetrievalHealthy=r=>r.status===200&&Array.isArray(r.body)&&r.body.every(d=>d&&typeof d.content==='string')&&r.body.some(d=>d.content.includes(c.marker));
+ if(report.results.some(r=>r.id==='retrieval-owner'&&r.status==='passed')){
+  try{
+   const r=await request({actor:null,surface:'anonymous-retrieval'});
+   if(r.markerPresent===true){retrievalStatus='failed';retrievalReason='An anonymous visitor received the private synthetic marker through the configured retrieval route.';}
+   else if([401,403].includes(r.status)||(r.status===200&&Array.isArray(r.body)&&r.body.length===0)){
+    const control=await request({actor:c.ownerId,surface:'retrieval'});
+    if(ownerRetrievalHealthy(control)){retrievalStatus='passed';retrievalReason='The exact anonymous retrieval was denied or empty and owner retrieval was rechecked.';}
+    else retrievalReason='Owner retrieval changed during the anonymous check. Not evidence of protection.';
+   }else retrievalReason='Unexpected anonymous retrieval response or missing route; not evidence of protection.';
+  }catch{retrievalReason='Anonymous retrieval request or owner control could not complete.';}
+ }
+ report.results.push({id:'anonymous-retrieval',status:retrievalStatus,reason:retrievalReason});
  report.summary=Object.fromEntries(['passed','failed','incomplete'].map(s=>[s,report.results.filter(r=>r.status===s).length]));
  report.verdict=report.summary.failed?'needs-attention':report.summary.incomplete?'incomplete':'checks-passed';
- return {...report,createdAt:new Date().toISOString(),adapter:'supabase-document-privacy-v3',requirementsHash:createHash('sha256').update(JSON.stringify(c)).digest('hex'),scope:`One synthetic file, two authenticated customers and anonymous public/authenticated file URLs, with repeated controls around denials. Sequential observations are not an atomic snapshot. Retrieval: ${c.retrieval.mode==='rpc'?'reviewed GET function with document_id argument':'direct document row'}. No model answers, vector ranking, signed links or whole-app assurance.`};
+ return {...report,createdAt:new Date().toISOString(),adapter:'supabase-document-privacy-v5',requirementsHash:createHash('sha256').update(JSON.stringify(c)).digest('hex'),scope:`One synthetic file, two authenticated customers and anonymous public/authenticated file URLs and the exact anonymous retrieval route, with repeated controls around denials. Marker disclosure in a bounded response is detected regardless of HTTP status. Sequential observations are not an atomic snapshot. Retrieval: ${c.retrieval.mode==='rpc'?'reviewed GET function with document_id argument':'direct document row'}. No model answers, vector ranking, signed links or whole-app assurance.`};
 }

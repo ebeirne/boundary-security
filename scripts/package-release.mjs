@@ -7,8 +7,10 @@ const root=fileURLToPath(new URL('../',import.meta.url));
 const destination=process.argv[2];
 if(!destination||process.argv.length!==3)throw Error('Supply a new output directory for the release package.');
 const git=args=>execFileSync('git',args,{cwd:root,encoding:'utf8',windowsHide:true});
-const files=['src','server','scripts','public','tests','docs','.github','package.json','package-lock.json','index.html','vite.config.js','README.md','LICENSE','CONTRIBUTING.md','SECURITY.md','ROADMAP.md','THIRD_PARTY_NOTICES.md','VERIFICATION.md','Start-Boundary.cmd','.gitignore','examples'];
+const files=['LICENSE','THIRD_PARTY_NOTICES.md','SECURITY.md','CONTRIBUTING.md','src','server','scripts','public','tests','docs','evidence','.github','package.json','package-lock.json','index.html','vite.config.js','README.md','VERIFICATION.md','Start-Boundary.cmd','start-boundary.sh','.gitignore','examples'];
 git(['diff','--exit-code','HEAD','--',...files]);
+const untracked=git(['ls-files','--others','--exclude-standard','-z','--',...files]).split('\0').filter(Boolean);
+if(untracked.length)throw Error(`Release source includes ${untracked.length} untracked file(s). Review and explicitly commit intended release files before packaging; git archive would omit them. No package was created.`);
 const version=JSON.parse(git(['show','HEAD:package.json'])).version;
 if(!/^[0-9A-Za-z.-]+$/.test(version))throw Error('Invalid package version.');
 const commit=git(['rev-parse','HEAD']).trim(),directory=path.resolve(destination);
@@ -20,4 +22,3 @@ const sha256=createHash('sha256').update(readFileSync(archive)).digest('hex');
 writeFileSync(path.join(directory,'SHA256SUMS'),`${sha256}  ${filename}\n`,{flag:'wx'});
 writeFileSync(path.join(directory,'release-manifest.json'),JSON.stringify({version,commit,filename,sha256,scope:'Local beta source distribution. Requires Node 22 or later and npm. Not a signed security certification.'},null,2),{flag:'wx'});
 console.log(JSON.stringify({filename,commit,sha256}));
-

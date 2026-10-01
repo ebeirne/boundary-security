@@ -1,3 +1,17 @@
+# Boundary — free, open-source access checks
+
+**Start with a prompt.** [Open Boundary and copy the setup prompt](https://beirne-websites.vercel.app/boundary/) into your coding assistant with your existing project open.
+
+[Read/copy the full prompt](docs/ADD-BOUNDARY.txt) · [Plain-text prompt](https://beirne-websites.vercel.app/boundary/add-boundary-prompt.txt) · [Supported workflow](docs/DOCUMENT-PRIVACY-QUICKSTART.md)
+
+The assistant inspects compatibility, adds the local runner and prepares staging configuration. You supply test sessions locally. Supported Supabase file/document workflows, separate staging, two ordinary test accounts, synthetic data and Node.js 22+ are required.
+
+The software and source are free under the MIT license. No account, card or Boundary subscription is required. Your infrastructure costs remain yours. Dependencies and artwork retain their own notices. Free software does not promise hosted infrastructure or unlimited support.
+
+This is an experimental scoped checker, not a security audit. A setup prompt or passing example is not proof that your application is secure.
+
+---
+
 # Boundary
 
 Repeatable access checks for PostgreSQL and Supabase apps.

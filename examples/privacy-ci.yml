@@ -1,0 +1,36 @@
+# Example for the APPLICATION repository; inactive until copied to .github/workflows/.
+# Put a reviewed Boundary snapshot at tools/boundary and synthetic setup at .boundary/privacy.json.
+name: Check staging document privacy
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: boundary-staging-privacy
+  cancel-in-progress: false
+jobs:
+  privacy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    environment: boundary-staging
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '22'
+      - name: Run the eight declared checks
+        env:
+          BOUNDARY_SUPABASE_PUBLIC_KEY: ${{ secrets.BOUNDARY_SUPABASE_PUBLIC_KEY }}
+          BOUNDARY_OWNER_TOKEN: ${{ secrets.BOUNDARY_OWNER_TOKEN }}
+          BOUNDARY_OTHER_TOKEN: ${{ secrets.BOUNDARY_OTHER_TOKEN }}
+        run: node tools/boundary/scripts/check-document-privacy.mjs --config .boundary/privacy.json --out boundary-report.json
+      - name: Retain the scoped report
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: boundary-privacy-${{ github.run_id }}-${{ github.run_attempt }}
+          path: boundary-report.json
+          retention-days: 7
+          if-no-files-found: warn

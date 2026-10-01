@@ -3,10 +3,13 @@ import {createRoot} from 'react-dom/client';
 import {ArrowUpRight,ArrowRight,ArrowLeft,Check,CheckCheck,ChevronDown,ChevronRight,CircleCheck,Download,FileCode2,FileText,FlaskConical,Folder,History,Info,Layers3,Loader2,LockKeyhole,Play,Plus,RefreshCw,Search,Settings2,ShieldCheck,SlidersHorizontal,Terminal,TriangleAlert,X,XCircle,PanelLeftClose,ExternalLink,Upload,BookOpen,GitCompareArrows,Copy} from 'lucide-react';
 import './style.css';
 import {PrivacySetup} from './privacy-setup.jsx';
-import './cinema.css';
+import {PrivacyStart} from './privacy-start.jsx';
+const BrowserDemo=React.lazy(()=>import('./browser-demo.jsx').then(m=>({default:m.BrowserDemo}))); 
+import './stone-console.css';
 import './journey.css';
 import {WorkspaceBackup} from './backup.jsx';
-import {MotionShell} from './motion.jsx';
+import {BoundaryLanding} from './boundary-landing.jsx';
+import {SmokeShell} from './smoke.jsx';
 import {Landing,Guide,Workspace,Setup,RepairWorkspace,EvidencePage,ConsoleHeader} from './journey.jsx';
 import '@fontsource/space-grotesk/400.css';
 
@@ -24,14 +27,17 @@ function App(){
   const [view,setView]=useState((['home','privacy','workspace','setup','demo','how-it-works','trust','review','contract','repair','evidence','history','method'].includes(location.hash.slice(1))?location.hash.slice(1):'home')),[busy,setBusy]=useState(false),[notice,setNotice]=useState(null),[filter,setFilter]=useState('all'),[query,setQuery]=useState('');
   const [detail,setDetail]=useState(null),[modal,setModal]=useState(null),[selectedRun,setSelectedRun]=useState(null),[draft,setDraft]=useState(null),[comparison,setComparison]=useState(null);
   const [savedExport,setSavedExport]=useState(null);
-  const refresh=async()=>{const r=await fetch('/api/state');if(!r.ok)throw new Error('Could not connect to the local workbench.');const d=await r.json();setData(d);return d;};
+  const refresh=async()=>{if(import.meta.env.VITE_PORTFOLIO==='true')return;const r=await fetch('/api/state');if(!r.ok)throw new Error('Could not connect to the local workbench.');const d=await r.json();setData(d);return d;};
   useEffect(()=>{refresh().catch(e=>setFatal(e.message));const cb=()=>{setView((['home','privacy','workspace','setup','demo','how-it-works','trust','review','contract','repair','evidence','history','method'].includes(location.hash.slice(1))?location.hash.slice(1):'home'));setDetail(null);setModal(null);window.scrollTo(0,0);};window.addEventListener('hashchange',cb);return()=>window.removeEventListener('hashchange',cb);},[]);
   useEffect(()=>{try{localStorage.setItem('boundary-project',selected);}catch{};setSelectedRun(null);setDraft(null);setDetail(null);setFilter('all');setQuery('');},[selected]);
   useEffect(()=>{if(!data?.busy)return;const timer=setInterval(()=>refresh().catch(()=>{}),1500);return()=>clearInterval(timer);},[data?.busy]);
   const request=async(path,body={},method='POST')=>{const r=await fetch(path,{method,headers:{'Content-Type':'application/json','X-Boundary-Token':data.token,...(method==='PUT'?{'X-Boundary-Version':data.projects.find(p=>path==='/api/projects/'+p.id)?.inputVersion??''}:{})},body:JSON.stringify(body)});const result=await r.json();if(!r.ok)throw new Error(result.error||'The operation did not complete.');return result;};
   const act=async(fn)=>{setBusy(true);setNotice(null);try{await fn();}catch(e){setNotice({type:'error',text:e.message});}finally{setBusy(false);}};
-  if(view==='home')return <Landing/>;
+  if(view==='demo'&&import.meta.env.VITE_PORTFOLIO==='true')return <React.Suspense fallback={<main className="startup">Opening the synthetic demo…</main>}><BrowserDemo/></React.Suspense>;
+  if(view==='home')return <BoundaryLanding/>;
+  if(view==='privacy'&&import.meta.env.VITE_PORTFOLIO==='true')return <div className="site-document"><header className="landing-nav"><a href="#home">← boundary</a><a href="#demo">Try the example ↗</a></header><PrivacyStart hosted onReady={()=>{location.hash='workspace'}}/></div>;
   if(view==='how-it-works'||view==='trust')return <Guide trust={view==='trust'}/>;
+  if(import.meta.env.VITE_PORTFOLIO==='true')return <div className="site-document"><header className="landing-nav"><a href="#home">← boundary</a><a href="/">Beirne Studios ↗</a></header><main><h1>The console runs locally.</h1><p>This is Boundary’s public design preview. Assessments require the local workbench and an isolated database; this website does not accept data or run security tests.</p><p>See the actual synthetic demo results, policy repair, and verified rerun in the walkthrough.</p><a className="button primary" href="#how-it-works">View the walkthrough ↗</a></main></div>;
   if(fatal)return <main className="startup"><Logo/><h1>Boundary is offline</h1><p>{fatal}</p><Button onClick={()=>location.reload()}>Try again</Button></main>;
   if(!data)return <main className="startup"><Logo/><Loader2 className="spin"/><p>Opening your local workspace…</p></main>;
   if(view==='privacy')return <div className="app-shell console-shell"><ConsoleHeader view={view}/><PrivacySetup token={data.token}/></div>;
@@ -105,7 +111,8 @@ function ImportForm({editing,request,onClose,onDone}){
 function RepairModal({onClose,onApply,busy}){const [patch,setPatch]=useState('');useEffect(()=>{fetch('/api/demo-patch').then(r=>r.text()).then(setPatch);},[]);return <Modal title="Review the demo repair" wide onClose={onClose}><div className="modal-content"><div className="inline-alert"><FlaskConical size={18}/><span>This known repair changes only the owned demo. It does not modify any deployed app.</span></div><p>The read and edit policies currently accept any signed-in user. The repair restricts both to organizations the current user belongs to.</p><pre>{patch||'Loading patch…'}</pre><p className="small-muted">After applying, rerun the unchanged contract. Allowed actions must continue to pass.</p><div className="modal-actions"><Button onClick={()=>download('demo-repair.sql',patch)} disabled={!patch}><Download size={15}/>Download SQL</Button><Button kind="primary" onClick={onApply} disabled={busy||!patch}><CheckCheck size={16}/>Apply to local demo</Button></div></div></Modal>;}
 function Comparison({runs:[before,after],onClose}){const same=before.contractHash===after.contractHash;const incomplete=[before,after].some(r=>r.setupError||r.summary.errors||r.summary.notRun||r.verdict==='incomplete');const transitions=after.results.map(r=>({r,old:before.results.find(x=>x.id===r.id)}));return <Modal title="Compare assessments" wide onClose={onClose}><div className="modal-content"><div className="compare-head"><div><small>BEFORE</small><strong>{before.revision}</strong><span>{fmt(before.startedAt)}</span></div><ArrowRight/><div><small>AFTER</small><strong>{after.revision}</strong><span>{fmt(after.startedAt)}</span></div></div>{!same?<div className="inline-alert"><TriangleAlert size={18}/><span>The contract changed. These results cannot establish that a repair preserved the original requirements.</span></div>:incomplete?<div className="inline-alert"><TriangleAlert size={18}/><span>One or both assessments are incomplete. A successful repair has not been established.</span></div>:<div className="inline-alert success"><Check size={18}/><span>Same contract. {transitions.filter(x=>x.old?.status==='failed'&&x.r.status==='passed').length} failures now pass; {transitions.filter(x=>x.old?.status==='passed'&&x.r.status!=='passed').length} previously passing checks regressed.</span></div>}{after.setupError&&<div className="form-error">The later assessment could not load its inputs.</div>}<div className="compare-list">{transitions.map(({r,old})=><div key={r.id}><strong>{r.label}</strong><Status status={old?.status??'unknown'}/><ArrowRight size={13}/><Status status={r.status}/></div>)}</div><p className="small-muted">Source {short(before.sourceHash)} → {short(after.sourceHash)}. Database checks only; no deployment is verified.</p></div></Modal>;}
 
-createRoot(document.getElementById('root')).render(<MotionShell><App/></MotionShell>);
+createRoot(document.getElementById('root')).render(<SmokeShell><App/></SmokeShell>);
+
 
 
 
